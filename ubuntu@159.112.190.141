@@ -4,7 +4,7 @@
 set -e
 
 echo "=== 1. Instalando o Rclone ==="
-sudo apt update && sudo apt install -y curl unzip cron
+sudo apt update && sudo apt install -y curl unzip
 curl https://rclone.org/install.sh | sudo bash
 
 echo ""
@@ -64,9 +64,6 @@ echo "Script de execução criado em: $BACKUP_SCRIPT"
 echo ""
 
 echo "=== 4. Configurando o agendamento no Cron (03:30 AM) ==="
-sudo systemctl enable cron
-sudo systemctl start cron
-
 # Adiciona a tarefa ao crontab do usuário sem duplicar
 (crontab -l 2>/dev/null | grep -v "$BACKUP_SCRIPT"; echo "30 3 * * * $BACKUP_SCRIPT") | crontab -
 
