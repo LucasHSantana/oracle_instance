@@ -93,6 +93,9 @@ echo "Script de execução criado em: $BACKUP_SCRIPT"
 echo ""
 
 echo "=== 4. Configurando o agendamento no Cron (03:30 AM) ==="
+# Configura o timezone para o Brasil para o script executar na hora correta
+CRON_TZ=America/Sao_Paulo
+
 # Adiciona a tarefa ao crontab do usuário sem duplicar
 (crontab -l; echo "30 3 * * * $BACKUP_SCRIPT") | crontab -
 
