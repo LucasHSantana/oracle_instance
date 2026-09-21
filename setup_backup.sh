@@ -27,11 +27,19 @@ else
     curl https://rclone.org/install.sh | sudo bash
 fi
 
-sudo systemctl enable cron
-sudo systemctl start cron
+echo ""
+echo "=== 3. Alterando fuzo horário para America/Sao_Paulo ==="
+sudo timedatectl set-timezone America/Sao_Paulo
 
 echo ""
-echo "=== 2. Configurando o Google Drive ==="
+echo "=== 4. Inicializando crontab (agendamento do backup) ==="
+sudo systemctl enable --now cron
+# Aguarda 2 segundos para o daemon inicializar completamente no sistema
+sleep 2
+echo "Crontab inicializado!"
+
+echo ""
+echo "=== 5. Configurando o Google Drive ==="
 echo "Execute o comando abaixo no terminal para criar o acesso ao Google Drive:"
 echo "----------------------------------------------------"
 echo "rclone config"
@@ -48,7 +56,7 @@ echo ""
 # Criar o script de backup automatizado
 BACKUP_SCRIPT="$HOME/executar_backup.sh"
 
-echo "=== 3. Criando o script de execução do backup ==="
+echo "=== 6. Criando o script de execução do backup ==="
 cat << 'EOF' > "$BACKUP_SCRIPT"
 #!/bin/bash
 set -e
@@ -61,6 +69,7 @@ DATA_HOJE=$(date +%Y-%m-%d)
 PASTA_TMP=/tmp/backups
 NOME_ARQUIVO="backup_${NOME_PASTA}_${DATA_HOJE}.tar.gz"
 CAMINHO_COMPACTADO="${PASTA_TMP}/${NOME_ARQUIVO}"
+NOME_BACKUP_POSTGRES=backup_postgres.sql
 
 DRIVE_REMOTE="gdrive:backup_oracle" # Nome do remote no rclone + pasta no Drive
 LOG_FILE="$HOME/rclone_backup.log"
@@ -81,6 +90,7 @@ sudo tar -czf "$CAMINHO_COMPACTADO" -C "$(dirname "$PASTA_ORIGEM")" --exclude="p
 rclone copy "$CAMINHO_COMPACTADO" "$DRIVE_REMOTE" --log-file="$LOG_FILE" --log-level INFO
 
 rm -f "$CAMINHO_COMPACTADO"
+rm -f $PASTA_ORIGEM/$NOME_BACKUP_POSTGRES
 
 rclone delete --min-age ${DIAS_RETENCAO}d $DRIVE_REMOTE 
 
@@ -92,12 +102,8 @@ chmod +x "$BACKUP_SCRIPT"
 echo "Script de execução criado em: $BACKUP_SCRIPT"
 echo ""
 
-echo "=== 4. Configurando o agendamento no Cron (03:30 AM) ==="
-# Configura o timezone para o Brasil para o script executar na hora correta
-CRON_TZ=America/Sao_Paulo
-
-# Adiciona a tarefa ao crontab do usuário sem duplicar
-(crontab -l; echo "30 3 * * * $BACKUP_SCRIPT") | crontab -
+echo "=== 7. Configurando o agendamento no Cron (03:30 AM) ==="
+((crontab -l 2>/dev/null || true); echo "30 3 * * * $BACKUP_SCRIPT") | crontab -
 
 echo "Agendamento concluído com sucesso!"
 echo "Para verificar os agendamentos, use: crontab -l"
